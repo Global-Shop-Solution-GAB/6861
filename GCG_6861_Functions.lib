@@ -1,0 +1,445 @@
+﻿Program.Sub.Preflight.Start
+V.Global.sLibrary_Callback.Declare(String, "")
+V.Global.bLibrary_Unattended.Declare(Boolean, False)
+V.Global.sLibrary_Project.Declare(String, "6861")
+V.Global.sLibrary_ProjectTitle.Declare(String, "AP AI Automation - Library")
+V.Global.sLibrary_CallingProgram.Declare(String, "")
+V.Global.bLibrary_SQLLogging.Declare(Boolean, False)
+V.Global.sLibrary_LogFile.Declare(String, "")
+Program.Sub.Preflight.End
+
+'GCG_6861_Functions.lib
+'Trey S
+'August 16th, 2022
+'This script is part the AP AI Automation project
+'This is a collection of utility subroutines used by many
+'or all of the scripts in this project.
+
+Program.Sub.SetLibraryLoggingVariables.Start
+'set the library error/logging variables
+'Parameters:
+'Callback - Callback subroutine on error
+'Unattended - If script is running unattended or not
+'Project - Project Arc ID
+'ProjectTitle - Name of Project for error messages
+'pass SQLLogging
+
+F.Intrinsic.Control.Try
+
+V.Local.bExists.Declare(Boolean, False)
+
+V.Global.sLibrary_Callback.Set(V.Args.Callback)
+V.Global.sLibrary_Project.Set(V.Args.Project)
+V.Global.sLibrary_ProjectTitle.Set(V.Args.ProjectTitle)
+
+F.Intrinsic.Control.If(V.Ambient.IsInIDE)
+	V.Global.bLibrary_Unattended.Set(False)
+F.Intrinsic.Control.Else
+	V.Global.bLibrary_Unattended.Set(V.Args.Unattended)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.PassedExists("CALLING_PROGRAM", V.Local.bExists)
+F.Intrinsic.Control.If(V.Local.bExists)
+	V.Global.sLibrary_CallingProgram.Set(V.Passed.CALLING_PROGRAM.Trim)
+F.Intrinsic.Control.Else
+	V.Global.sLibrary_CallingProgram.Set(V.Caller.Caller)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.ArgExists("SQLLogging", V.Local.bExists)
+F.Intrinsic.Control.If(V.Local.bExists)
+	V.Global.bLibrary_SQLLogging.Set(V.Args.SQLLogging)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(SetCallingProgram)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.SetLibraryLoggingVariables.End
+
+Program.Sub.CheckDirectories.Start
+'check if the given import directories exist
+'create them if they don't
+'pass directories delimited with *!*
+
+F.Intrinsic.Control.Try
+
+V.Local.sDirectories.Declare(String)
+V.Local.sPath.Declare(String)
+V.Local.bExists.Declare(Boolean)
+V.Local.iCounter.Declare(Long)
+
+V.Local.sDirectories.Set(V.Args.Directories)
+F.Intrinsic.String.Split(V.Local.sDirectories, "*!*", V.Local.sDirectories)
+
+F.Intrinsic.Control.For(V.Local.iCounter, 0, V.Local.sDirectories.UBound, 1)
+	V.Local.sPath.Set(V.Local.sDirectories(V.Local.iCounter))
+	F.Intrinsic.File.DirExists(V.Local.sPath, V.Local.bExists)
+	F.Intrinsic.Control.If(V.Local.bExists.Not)
+		F.Intrinsic.File.CreateDir(V.Local.sPath)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iCounter)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.CheckDirectories.End
+
+Program.Sub.ErrorMessage.Start
+'error message and logging
+'Parameters:
+'Optional:
+'other parameters are pulled from SetLibraryLoggingVariables
+
+F.Intrinsic.Control.Try
+
+V.Static.bError.Declare(Boolean, False)
+V.Local.sError.Declare(String)
+V.Local.bExists.Declare(Boolean)
+V.Local.sLine.Declare(String)
+V.Local.sItems.Declare(String)
+V.Local.iCounter.Declare(Long)
+V.Local.iOrigin.Declare(Long)
+
+'check for error loop
+F.Intrinsic.Control.If(V.Static.bError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndIf
+V.Static.bError.Set(True)
+
+'grab error line
+F.Intrinsic.Control.Try
+	V.Local.sLine.Set(V.Ambient.ErrorLine)
+F.Intrinsic.Control.Catch
+	'just means they aren't updated, we don't need to do anything
+F.Intrinsic.Control.EndTry
+
+'log error
+F.Intrinsic.String.Build("{0}\\{1} Error: {2} - {3}", V.Ambient.SubroutineCalledFrom, V.Local.sLine, V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Local.sError)
+F.Intrinsic.Control.CallSub(AddLog, "Message", V.Local.sError)
+
+'build error file
+F.Global.General.GetScriptOrigin(V.Caller.ScriptFile, V.Local.iOrigin)
+F.Intrinsic.String.Build("Time: {0}{1}Project: {33}{1}Title: {34}{1}Script: {15}{1}Calling Script: {35}{1}Subroutine: {16}{1}Line: {17}{1}Error: {13} - {14}{1}SQL Logging: {36}{1}Log File: {37}{1}Last Action: {18}{1}Script Version: {28}{1}Script Origin: {32}{1}{1}User: {2}{1}Terminal: {6}{1}Caller: {7}{1}GSS Version: {12}{1}GAB Version: {11}{1}Database Type: {31}{1}Pervasive Server: {20}{1}Pervasive Client: {10}{1}Hook: {26}{1}Switches: {27}{1}Synchronous: {8}{1}Debug: {24}{1}{1}Machine: {4}{1}Windows User: {3}{1}Domain: {30}{1}Session: {29}{1}Windows Platform: {21}{1}Windows Version: {23}{1}PID: {5}{1}Thread ID: {9}{1}Instance Handle: {19}{1}Windows Uptime: {22}{1}Handle: {25}", V.Ambient.Now, V.Ambient.NewLine, V.Caller.User, V.System.UserName, V.System.ComputerName, V.Ambient.PID, V.Caller.Terminal, V.Caller.Caller, V.Caller.Sync,  V.Ambient.ThreadID, V.Ambient.PervasiveClientVersion, V.Ambient.GABVersion, V.Caller.GSSVersion, V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Caller.ScriptFile, V.Ambient.SubroutineCalledFrom, V.Local.sLine, V.Ambient.LastAction, V.Ambient.InstanceHandle, V.Ambient.PervasiveServerVersion, V.Ambient.WindowsPlatformID, V.Ambient.WindowsUpTime, V.Ambient.WindowsVersionName, V.Caller.Debug, V.Caller.Handle, V.Caller.Hook, V.Caller.Switches, V.Caller.ScriptVer, V.System.SessionName, V.System.UserDomain, V.Ambient.DatabaseType, V.Local.iOrigin, V.Global.sLibrary_Project, V.Global.sLibrary_ProjectTitle, V.Global.sLibrary_CallingProgram, V.Global.bLibrary_SQLLogging, V.Global.sLibrary_LogFile, V.Local.sError)
+
+'add in passed variables
+F.Intrinsic.Control.If(V.Ambient.ItemList.Trim, !=, "")
+	F.Intrinsic.String.Build("{0}{1}", V.Local.sError, V.Ambient.NewLine, V.Local.sError)
+	F.Intrinsic.String.Split(V.Ambient.ItemList, "*!*", V.Local.sItems)
+	F.Intrinsic.Control.For(V.Local.iCounter, 0, V.Local.sItems.UBound, 1)
+		F.Intrinsic.String.Build("{0}{1}{2} - {3}: {4}", V.Local.sError, V.Ambient.NewLine, V.Local.sItems(V.Local.iCounter), V.Passed.[V.Local.sItems(V.Local.iCounter)].Name, V.Passed.[V.Local.sItems(V.Local.iCounter)], V.Local.sError)
+	F.Intrinsic.Control.Next(V.Local.iCounter)
+F.Intrinsic.Control.EndIf
+
+'save file
+F.Intrinsic.Control.CallSub(AddLogFile, "TYPE", "Error", "MESSAGE", V.Local.sError)
+
+'if not unattended, display error
+F.Intrinsic.String.Build("Error in GAB Script [{1}]{2}{2}Date/Time: {0}{2}Line: {3}{2}Error: {4} - {5}", V.Ambient.Now, V.Caller.ScriptFile, V.Ambient.NewLine, V.Local.sLine, V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Local.sError)
+F.Intrinsic.Control.If(V.Global.bLibrary_Unattended.Not)
+	F.Intrinsic.UI.Msgbox(V.Local.sError, V.Global.sLibrary_ProjectTitle)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Global.sLibrary_Callback.Trim, !=, "")
+	F.Intrinsic.Control.CallSub(V.Global.sLibrary_Callback)
+F.Intrinsic.Control.Else
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Error in GAB Script [{1}]{2}{2}Date/Time: {0}{2}Line: {3}{2}Error: {4} - {5}", V.Ambient.Now, V.Caller.ScriptFile, V.Ambient.NewLine, V.Local.sLine, V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError, V.Global.sLibrary_ProjectTitle)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.ErrorMessage.End
+
+Program.Sub.AddLog.Start
+'date and time will be automatically added
+'MESSAGE (what to log)
+
+F.Intrinsic.Control.Try
+
+V.Local.sMessage.Declare(String)
+V.Local.bExists.Declare(Boolean)
+V.Local.sPath.Declare(String)
+V.Local.sFile.Declare(String)
+V.Local.sScript.Declare(String)
+
+F.Intrinsic.Control.CallSub(GetScriptNameClean)
+F.Intrinsic.String.Build("{0}\Custom\{1}\{2}\Log\{3}", V.Caller.GlobalDir, V.Global.sLibrary_Project, V.Caller.CompanyCode, V.Args.ScriptName, V.Local.sPath)
+F.Intrinsic.Control.CallSub(CheckDirectories, "DIRECTORIES", V.Local.sPath)
+
+F.Intrinsic.String.Build("{0}\{1}-{2}-Log.txt", V.Local.sPath, V.Ambient.Date.FormatYYYYMMDD, V.Args.ScriptName, V.Local.sFile)
+F.Intrinsic.Control.If(V.Global.sLibrary_LogFile.Trim, =, "")
+	F.Intrinsic.String.Build("{0}\{1}-{2}-Log.txt", V.Local.sPath, V.Ambient.Now.FormatYYYYMMDDHHNNSS, V.Args.ScriptName, V.Local.sFile)
+	V.Global.sLibrary_LogFile.Set(V.Local.sFile)
+F.Intrinsic.Control.Else
+	V.Local.sFile.Set(V.Global.sLibrary_LogFile)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.File.GetFileNameFromFQN(V.Caller.ScriptFile, V.Local.sScript)
+F.Intrinsic.File.Exists(V.Local.sFile, V.Local.bExists)
+F.Intrinsic.Control.If(V.Local.bExists.Not)
+	F.Intrinsic.String.Build("{0} {1}\\{2}\\{3}\\{4}: Log Start - Hook: {5}, PID: {6}", V.Ambient.Date.FormatYYYY-MM-DD, V.Ambient.Time, V.Global.sLibrary_CallingProgram, V.Local.sScript, V.Ambient.SubroutineCalledFrom, V.Caller.Hook, V.Ambient.PID, V.Local.sMessage)
+	F.Intrinsic.File.String2File(V.Local.sFile, V.Local.sMessage)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Replace(V.Args.Message, V.Ambient.NewLine, ", ", V.Local.sMessage)
+F.Intrinsic.String.Build("{0} {1}\\{2}\\{3}\\{4}: {5}", V.Ambient.Date.FormatYYYY-MM-DD, V.Ambient.Time, V.Global.sLibrary_CallingProgram, V.Local.sScript, V.Ambient.SubroutineCalledFrom, V.Local.sMessage, V.Local.sMessage)
+F.Intrinsic.File.Append2FileNewLine(V.Local.sFile, V.Local.sMessage)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.AddLog.End
+
+Program.Sub.AddLogFile.Start
+'pass type
+'MESSAGE (what to log)
+
+F.Intrinsic.Control.Try
+
+V.Local.sPath.Declare(String)
+V.Local.sFile.Declare(String)
+V.Local.sTime.Declare(String)
+V.Local.sMessage.Declare(String)
+
+F.Intrinsic.Control.CallSub(GetScriptNameClean)
+F.Intrinsic.String.Build("{0}\Custom\{1}\{2}\Log\{3}", V.Caller.GlobalDir, V.Global.sLibrary_Project, V.Caller.CompanyCode, V.Args.ScriptName, V.Local.sPath)
+F.Intrinsic.Control.CallSub(CheckDirectories, "DIRECTORIES", V.Local.sPath)
+
+F.Intrinsic.String.StripCharacters(V.Ambient.Now, V.Local.sTime)
+
+'grab script name, V.Args.ScriptName
+F.Intrinsic.String.Build("{0}\{1}-{2}-{3}.txt", V.Local.sPath, V.Local.sTime, V.Args.ScriptName, V.Args.Type, V.Local.sFile)
+F.Intrinsic.String.Build("Creating {0} log file at [{1}]", V.Args.Type, V.Local.sFile, V.Local.sMessage)
+F.Intrinsic.Control.CallSub(AddLog, "Message", V.Local.sMessage)
+F.Intrinsic.File.String2File(V.Local.sFile, V.Args.Message)
+
+F.Intrinsic.Variable.AddRV("Log_File", V.Local.sFile)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.AddLogFile.End
+
+Program.Sub.BackUpFile.Start
+'pass TYPE
+'pass File
+
+F.Intrinsic.Control.Try
+
+V.Local.sPath.Declare(String)
+V.Local.sName.Declare(String)
+V.Local.bExists.Declare(Boolean)
+V.Local.sMessage.Declare(String)
+
+F.Intrinsic.String.Build("{0}\Custom\{1}\{2}\File Backups\{3}", V.Caller.GlobalDir, V.Global.sLibrary_Project, V.Caller.CompanyCode, V.Args.Type, V.Local.sPath)
+F.Intrinsic.Control.CallSub(CheckDirectories, "Directories", V.Local.sPath)
+
+F.Intrinsic.File.GetFileNameFromFQN(V.Args.File, V.Local.sName)
+F.Intrinsic.Control.CallSub(AppendFileName, "File", V.Local.sName, "Append", V.Ambient.Now.FormatYYYY-MM-DD-HH-NN-SS)
+
+F.Intrinsic.String.Build("{0}\{1}", V.Local.sPath, V.Args.New_Name, V.Local.sPath)
+
+F.Intrinsic.File.Exists(V.Args.File, V.Local.bExists)
+F.Intrinsic.Control.If(V.Local.bExists)
+	F.Intrinsic.String.Build("Backing up {0} file [{1}] to [{2}]", V.Args.Type, V.Args.File, V.Local.sPath, V.Local.sMessage)
+	F.Intrinsic.Control.CallSub(AddLog, "Message", V.Local.sMessage)
+	F.Intrinsic.File.CopyFile(V.Args.File, V.Local.sPath)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.BackUpFile.End
+
+Program.Sub.BackUpFileString.Start
+'pass TYPE
+'pass Name
+'pass Contents
+
+F.Intrinsic.Control.Try
+
+V.Local.sPath.Declare(String)
+V.Local.sMessage.Declare(String)
+
+F.Intrinsic.String.Build("{0}\Custom\{1}\{2}\File Backups\{3}", V.Caller.GlobalDir, V.Global.sLibrary_Project, V.Caller.CompanyCode, V.Args.Type, V.Local.sPath)
+F.Intrinsic.Control.CallSub(CheckDirectories, "Directories", V.Local.sPath)
+F.Intrinsic.Control.CallSub(AppendFileName, "File", V.Args.Name, "Append", V.Ambient.Now.FormatYYYY-MM-DD-HH-NN-SS)
+F.Intrinsic.String.Build("{0}\{1}", V.Local.sPath, V.Args.New_Name, V.Local.sPath)
+
+F.Intrinsic.String.Build("Backing up {0} string to file [{1}]", V.Args.Type, V.Local.sPath, V.Local.sMessage)
+F.Intrinsic.Control.CallSub(AddLog, "Message", V.Local.sMessage)
+
+F.Intrinsic.File.String2File(V.Local.sPath, V.Args.Contents)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage, "FromLibrary", True)
+F.Intrinsic.Control.EndTry
+Program.Sub.BackUpFileString.End
+
+Program.Sub.LogSQL.Start
+'pass SQL
+
+F.Intrinsic.Control.Try
+
+V.Local.sMessage.Declare(String)
+
+F.Intrinsic.Control.If(V.Global.bLibrary_SQLLogging)
+	F.Intrinsic.String.Build("Executing SQL: [{0}]", V.Args.SQL, V.Local.sMessage)
+	F.Intrinsic.Control.CallSub(AddLog, "Message", V.Local.sMessage)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.LogSQL.End
+
+Program.Sub.GetScriptNameClean.Start
+'returns the name of the script without extension
+
+F.Intrinsic.Control.Try
+
+V.Local.sFileNameClean.Declare(String)
+V.Local.sFile.Declare(String)
+
+F.Intrinsic.File.GetFileNameFromFQN(V.Caller.ScriptFile, V.Local.sFileNameClean)
+F.Intrinsic.String.Split(V.Local.sFileNameClean, ".", V.Local.sFileNameClean)
+F.Intrinsic.Variable.RemoveArrayElementByOrdinal(V.Local.sFileNameClean, V.Local.sFileNameClean.UBound, V.Local.sFileNameClean)
+F.Intrinsic.String.Join(V.Local.sFileNameClean, ".", V.Local.sFile)
+
+F.Intrinsic.Variable.AddRV("ScriptName", V.Local.sFile)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.GetScriptNameClean.End
+
+Program.Sub.AppendFileName.Start
+'pass FILE
+'pass APPEND
+'returns NEW_NAME
+
+F.Intrinsic.Control.Try
+
+V.Local.sExtension.Declare(String)
+V.Local.sFile.Declare(String)
+V.Local.sNewName.Declare(String)
+
+F.Intrinsic.File.GetExtensionComponent(V.Args.File, V.Local.sExtension)
+F.Intrinsic.String.Build(".{0}", V.Local.sExtension, V.Local.sExtension)
+F.Intrinsic.String.Replace(V.Args.File, V.Local.sExtension, "", V.Local.sNewName)
+F.Intrinsic.String.Build("{0}_{1}{2}", V.Local.sNewName, V.Args.Append, V.Local.sExtension, V.Local.sNewName)
+
+F.Intrinsic.Variable.AddRV("NEW_NAME", V.Local.sNewName)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage, "FromLibrary", True)
+F.Intrinsic.Control.EndTry
+Program.Sub.AppendFileName.End
+
+Program.Sub.GetMostRecentTempFile.Start
+'returns the most recent file from the GSS temp matching the passed search
+'pass SEARCH
+
+F.Intrinsic.Control.Try
+
+V.Local.sFiles.Declare(String)
+V.Local.iCounter.Declare(Long)
+V.Local.dDate.Declare(Date)
+V.Local.sFile.Declare(String)
+V.Local.sReturn.Declare(String, "")
+
+F.Intrinsic.File.GetFileList(V.Args.Search, V.Local.sFiles)
+
+F.Intrinsic.Control.If(V.Local.sFiles.Trim, !=, "")
+	F.Data.DataTable.CreateFromString("dtFiles", V.Local.sFiles, "File", "String", "@!@", ":")
+	F.Data.DataTable.AddColumn("dtFiles", "Timestamp", "Date")
+	F.Intrinsic.Control.If(V.DataTable.dtFiles.RowCount, >, 0)
+		F.Intrinsic.Control.For(V.Local.iCounter, 0, V.DataTable.dtFiles.RowCount--, 1)
+			F.Intrinsic.String.Build("{0}{1}", V.Caller.LocalGSSTempDir, V.DataTable.dtFiles(V.Local.iCounter).File!FieldValTrim, V.Local.sFile)
+			F.Intrinsic.File.GetFileDateTimeExtended(V.Local.sFile, 1, True, V.Local.dDate)
+			F.Data.DataTable.SetValue("dtFiles", V.Local.iCounter, "Timestamp", V.Local.dDate)
+		F.Intrinsic.Control.Next(V.Local.iCounter)
+		
+		F.Data.DataView.Create("dtFiles", "dvFiles", 22, "", "Timestamp desc")
+		F.Intrinsic.String.Build("{0}{1}", V.Caller.LocalGSSTempDir, V.DataView.dtFiles!dvFiles(0).File!FieldValTrim, V.Local.sReturn)
+		F.Data.DataView.Close("dtFiles", "dvFiles")
+	F.Intrinsic.Control.EndIf
+	F.Data.DataTable.Close("dtFiles")
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.AddRV("TempFile", V.Local.sReturn)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage, "FromLibrary", True)
+F.Intrinsic.Control.EndTry
+Program.Sub.GetMostRecentTempFile.End
+
+Program.Sub.SetCallingProgram.Start
+F.Intrinsic.Control.Try
+
+V.Local.sFile.Declare(String)
+
+F.Intrinsic.File.GetFileNameFromFQN(V.Caller.ScriptFile, V.Local.sFile)
+F.Global.General.SetPassedDataElement("CALLING_PROGRAM", V.Local.sFile)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.SetCallingProgram.End
+
+Program.Sub.Export.Start
+'generic export
+'pass Form, GridControl, and Filename base
+
+F.Intrinsic.Control.Try
+
+V.Local.sFileExport.Declare(String)
+V.Local.bExcel.Declare(Boolean)
+V.Local.bFileLocked.Declare(Boolean)
+V.Local.sMessage.Declare(String)
+V.Local.sType.Declare(String)
+V.Local.sForm.Declare(String)
+V.Local.sGridControl.Declare(String)
+V.Local.sFileName.Declare(String)
+V.Local.bExists.Declare(Boolean)
+
+V.Local.sForm.Set(V.Args.Form)
+V.Local.sGridControl.Set(V.Args.GridControl)
+V.Local.sFileName.Set(V.Args.FileName)
+
+F.Intrinsic.Variable.ArgExists("TYPE", V.Local.bExists)
+F.Intrinsic.Control.If(V.Local.bExists)
+	V.Local.sType.Set(V.Args.TYPE.Trim)
+F.Intrinsic.Control.Else
+	F.Automation.MSExcel.CheckPresence(V.Local.bExcel)
+	F.Intrinsic.Control.If(V.Local.bExcel)
+		V.Local.sType.Set("xlsx")
+	F.Intrinsic.Control.Else
+		V.Local.sType.Set("csv")
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.File.MakeFilenameFriendly(V.Local.sFileName, V.Local.sFileName)
+F.Intrinsic.String.Build("{0}\{1}_Export_{2}.{3}", V.Caller.LocalGssTempDir, V.Local.sFileName, V.Ambient.Date.FormatMM-DD-YYYY, V.Local.sType, V.Local.sFileExport)
+F.Intrinsic.File.IsFileLocked(V.Local.sFileExport, V.Local.bFileLocked)
+
+F.Intrinsic.Control.If(V.Local.bFileLocked)
+	F.Intrinsic.String.Build("File is already open. Please close and export again.{0}File: {1}", V.Ambient.NewLine, V.Local.sFileExport, V.Local.sMessage)
+	F.Intrinsic.UI.Msgbox(V.Local.sMessage,"File In Use")
+F.Intrinsic.Control.Else
+	GUI.[V.Local.sForm].[V.Local.sGridControl].Export(V.Local.sFileExport, V.Local.sType)
+	F.Intrinsic.Task.ShellExec(0, "", V.Local.sFileExport, "", "", 1)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage, "FromLibrary", True)
+F.Intrinsic.Control.EndTry
+Program.Sub.Export.End
+
+Program.Sub.Comments.Start
+${$5$}$20.1.8693.27812$}$1
+${$6$}$rseddon$}$20240215092751395$}$DkKb6sybY9hE3N0enyRwKJuHSlMGTgRbkwdKLri347R+p4LwnR0LAD6bgY8TJHjy25NW/mP8NV8=
+Program.Sub.Comments.End

@@ -1,0 +1,99 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.Form..Create(DashForm)
+Gui.Form..Caption("AP Vendor Cross Reference")
+Gui.Form..Size(10425,5520)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..AlwaysOnTop(False)
+Gui.Form..FontName("Tahoma")
+Gui.Form..FontSize(8.25)
+Gui.Form..ControlBox(True)
+Gui.Form..MaxButton(True)
+Gui.Form..MinButton(True)
+Gui.Form..MousePointer(0)
+Gui.Form..Moveable(True)
+Gui.Form..Sizeable(True)
+Gui.Form..ShowInTaskBar(True)
+Gui.Form..TitleBar(True)
+Gui.Form..BarSaveButton(True,False)
+Gui.Form..Event(SaveButtonClick,Form_SaveButtonClick)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form.gsgcVendors.Create(GsGridControl)
+Gui.Form.gsgcVendors.Enabled(True)
+Gui.Form.gsgcVendors.Visible(True)
+Gui.Form.gsgcVendors.Zorder(0)
+Gui.Form.gsgcVendors.Size(10425,4530)
+Gui.Form.gsgcVendors.Position(0,0)
+Gui.Form.gsgcVendors.Dock(5)
+Gui.Form.gsgcVendors.Event(LostFocus,gsgcVendors_LostFocus)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.External.Include.Library("GCG_6861_Functions.lib")
+
+'options
+V.Global.sCallback.Declare(String, "Unload")
+V.Global.sProject.Declare(String, "6861")
+V.Global.sProjectTitle.Declare(String, "AP AI Automation - Vendor Cross Reference")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.Try
+	
+	F.Intrinsic.Control.CallSub(SetLibraryLoggingVariables, "Project", V.Global.sProject, "ProjectTitle", V.Global.sProjectTitle, "CallBack", V.Global.sCallback, "Unattended", False)
+	
+	f.ODBC.Connection!con6861.opencompanyconnection(60)
+	f.Data.Datatable.CreateFromSQL("dtVend","con6861","SELECT VendorCode,VendorName,ID FROM GCG_6861_AP_XREF",true)
+	gui.Form.gsgcVendors.DataSource("dtVend")
+	gui.Form.gsgcVendors.AddGridviewFromDatatable("gvVend","dtVend")
+	gui.Form.gsgcVendors.SetGridviewProperty("gvVend","AllowAddRows",True)
+	gui.Form.gsgcVendors.SetGridviewProperty("gvVend","AllowDeleteRows",True)
+	gui.Form.gsgcVendors.SetColumnProperty("gvVend","VendorCode","ReadOnly","false")
+	gui.Form.gsgcVendors.SetColumnProperty("gvVend","VendorCode","AllowEdit","true")
+	gui.Form.gsgcVendors.SetColumnProperty("gvVend","VendorName","ReadOnly","false")
+	gui.Form.gsgcVendors.SetColumnProperty("gvVend","VendorName","AllowEdit","true")
+	
+	gui.Form..Show
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.Form_SaveButtonClick.Start
+f.Intrinsic.Control.Try
+	f.Data.DataTable.SaveToDB("dtVend","con6861","GCG_6861_AP_XREF","ID",7)
+	f.Intrinsic.UI.Msgbox("New XRef Saved.")
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.Form_SaveButtonClick.End
+
+Program.Sub.Form_UnLoad.Start
+F.Intrinsic.Control.Try
+
+F.Intrinsic.Control.If(V.ODBC.con6861.Exists, =, 1)
+	F.ODBC.Connection!con6861.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.gsgcVendors_LostFocus.Start
+F.Intrinsic.Control.Try
+
+'nothing
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.gsgcVendors_LostFocus.End
+
+Program.Sub.Comments.Start
+${$5$}$20.1.8693.27812$}$1
+${$6$}$rseddon$}$20240213152146435$}$DkKb6sybY9hE3N0enyRwKJuHSlMGTgRbkwdKLri347QADXCwGHmMXUTAhgaMhMz+qLwuC/sgSoM=
+Program.Sub.Comments.End

@@ -1,0 +1,156 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.frm_main..Create(BaseForm)
+Gui.frm_main..Caption("AP AI Automation Settings")
+Gui.frm_main..Size(645,198)
+Gui.frm_main..MinX(0)
+Gui.frm_main..MinY(0)
+Gui.frm_main..Position(0,0)
+Gui.frm_main..AlwaysOnTop(False)
+Gui.frm_main..FontName("Tahoma")
+Gui.frm_main..FontSize(8.25)
+Gui.frm_main..ControlBox(True)
+Gui.frm_main..MaxButton(True)
+Gui.frm_main..MinButton(True)
+Gui.frm_main..MousePointer(0)
+Gui.frm_main..Moveable(True)
+Gui.frm_main..Sizeable(True)
+Gui.frm_main..ShowInTaskBar(True)
+Gui.frm_main..TitleBar(True)
+Gui.frm_main..Event(UnLoad,frm_main_UnLoad)
+Gui.frm_main.lbl1.Create(Label,"API ID:",True,54,19,0,62,25,True,0,"Tahoma",8,,0,0)
+Gui.frm_main.lbl1.BorderStyle(0)
+Gui.frm_main.lbl2.Create(Label,"Workflow ID:",True,63,13,0,30,67,True,0,"Tahoma",8,,0,0)
+Gui.frm_main.lbl2.BorderStyle(0)
+Gui.frm_main.txt_api_id.Create(TextBox,"",True,500,28,0,130,22,True,0,"Tahoma",8,,1)
+Gui.frm_main.txt_workflow_id.Create(TextBox,"",True,500,20,0,130,65,True,0,"Tahoma",8,,1)
+Gui.frm_main.cmdUpdate.Create(Button)
+Gui.frm_main.cmdUpdate.Enabled(True)
+Gui.frm_main.cmdUpdate.Visible(True)
+Gui.frm_main.cmdUpdate.Zorder(0)
+Gui.frm_main.cmdUpdate.Size(112,34)
+Gui.frm_main.cmdUpdate.Position(518,125)
+Gui.frm_main.cmdUpdate.Caption("Update")
+Gui.frm_main.cmdUpdate.FontName("Tahoma")
+Gui.frm_main.cmdUpdate.FontSize(8)
+Gui.frm_main.cmdUpdate.BackColor(12648384)
+Gui.frm_main.cmdUpdate.Event(Click,cmdUpdate_Click)
+Gui.frm_main.lbl3.Create(Label,"Document Group:",True,84,13,0,15,107,True,0,"Tahoma",8.25,,0,0)
+Gui.frm_main.lbl3.BorderStyle(0)
+Gui.frm_main.txt_doc_group.Create(TextBox,"",True,100,20,0,130,105,True,0,"Tahoma",8.25,,1)
+Gui.frm_main.cmdBrowse.Create(Button)
+Gui.frm_main.cmdBrowse.Enabled(True)
+Gui.frm_main.cmdBrowse.Visible(True)
+Gui.frm_main.cmdBrowse.Zorder(0)
+Gui.frm_main.cmdBrowse.Size(42,23)
+Gui.frm_main.cmdBrowse.Position(235,105)
+Gui.frm_main.cmdBrowse.Caption("^")
+Gui.frm_main.cmdBrowse.FontName("Tahoma")
+Gui.frm_main.cmdBrowse.FontSize(8.25)
+Gui.frm_main.cmdBrowse.Event(Click,cmdBrowse_Click)
+Gui.frm_main.chkAutoMatch.Create(CheckBox)
+Gui.frm_main.chkAutoMatch.Enabled(True)
+Gui.frm_main.chkAutoMatch.Visible(False)
+Gui.frm_main.chkAutoMatch.Zorder(0)
+Gui.frm_main.chkAutoMatch.Size(156,20)
+Gui.frm_main.chkAutoMatch.Position(130,139)
+Gui.frm_main.chkAutoMatch.Caption("Auto Match")
+Gui.frm_main.chkAutoMatch.FontName("Tahoma")
+Gui.frm_main.chkAutoMatch.FontSize(8.25)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.External.Include.Library("GCG_6861_Functions.lib")
+
+'options
+V.Global.sCallback.Declare(String, "frm_main_UnLoad")
+V.Global.sProject.Declare(String, "6861")
+V.Global.sProjectTitle.Declare(String, "AP AI Automation - Maintenance")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+
+f.Intrinsic.Control.Try
+	'C:\Apps\Global\PLUGINS\GCG_6861_AP_AUTOMATION_ADMIN_SETTINGS.txt
+	v.Local.sVal.Declare
+	v.Local.bFileCheck.Declare(boolean)
+	v.Local.sFileLocat.Declare(string)
+	
+	F.Intrinsic.Control.CallSub(SetLibraryLoggingVariables, "Project", V.Global.sProject, "ProjectTitle", V.Global.sProjectTitle, "CallBack", V.Global.sCallback, "Unattended", False)
+	
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GCG_6861_AP_AUTOMATION_ADMIN_SETTINGS.txt",v.Local.sFileLocat) 'GCG_6861_AP_AUTOMATION_ADMIN_SETTINGS.txt
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Intrinsic.File.File2String(v.Local.sFileLocat,v.Local.sVal)
+		f.Intrinsic.String.Split(v.Local.sVal,v.Ambient.NewLine,v.Local.sVal)
+		gui.frm_main.txt_api_id.Text(v.Local.sVal(0))
+		gui.frm_main.txt_workflow_id.Text(v.Local.sVal(1))
+		GUI.frm_main.txt_doc_group.Text(V.Local.sVal(2))
+		
+	f.Intrinsic.Control.Else
+		gui.frm_main.txt_workflow_id.Text("")
+		gui.frm_main.txt_workflow_id.Text("")
+	f.Intrinsic.Control.EndIf
+	
+	gui.frm_main..show
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.frm_main_UnLoad.Start
+F.Intrinsic.Control.Try
+
+F.Intrinsic.Control.If(V.ODBC.con6861.Exists, =, 1)
+	F.ODBC.Connection!con6861.Close
+F.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.frm_main_UnLoad.End
+
+Program.Sub.cmdUpdate_Click.Start
+f.Intrinsic.Control.Try
+	v.Local.sFileLocat.Declare(string)
+	v.Local.s_both_ids.Declare(string)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",v.Caller.CompanyCode,"_GCG_6861_AP_AUTOMATION_ADMIN_SETTINGS.txt",v.Local.sFileLocat)
+	f.Intrinsic.String.Concat(v.screen.frm_main!txt_api_id.Text,v.Ambient.NewLine,v.screen.frm_main!txt_workflow_id.Text,v.Ambient.NewLine,v.Screen.frm_main!txt_doc_group.Text,v.Ambient.NewLine,v.Screen.frm_main!chkAutoMatch.Value,v.Local.s_both_ids)		 
+	f.Intrinsic.File.String2File(v.Local.sFileLocat, v.Local.s_both_ids)
+	f.Intrinsic.UI.Msgbox("Successfully Updated.")
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdUpdate_Click.End
+
+Program.Sub.cmdBrowse_Click.Start
+f.Intrinsic.Control.Try
+	V.Local.sSQL.Declare(String)
+	V.Local.sCol.Declare(String)
+	V.Local.sColW.Declare(String)
+	V.Local.sRet.Declare(String)
+	V.Local.sSQL.set("SELECT GRP_ID,GRP_NAME FROM ATG_DOC_GRP")
+	f.ODBC.Connection!con.opencompanyconnection(90)
+	'Split Column Names into an array (*!* delimited string)
+	F.Intrinsic.String.Split("Group ID*!*Group Name","*!*",V.Local.sCol)
+	'Split Column widths into an array (*!* delimited string)
+	F.Intrinsic.String.Split("200*!*1000","*!*",V.Local.sColW)
+	F.Intrinsic.UI.Browser("Select a Document Control Group","con",V.Local.sSQL,V.Local.sCol,V.Local.sColW,V.Local.sRet)
+	F.Intrinsic.Control.If(V.Local.sRet,<>,"***CANCEL***")
+		f.Intrinsic.String.Split(v.Local.sRet,"*!*",v.Local.sRet)
+		gui.frm_main.txt_doc_group.Text(v.Local.sRet(0))
+	F.Intrinsic.Control.EndIf
+	f.ODBC.Connection!con.Close
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdBrowse_Click.End
+
+Program.Sub.Comments.Start
+${$5$}$20.1.8693.27812$}$1
+${$6$}$rseddon$}$20240221152529285$}$DkKb6sybY9hE3N0enyRwKJuHSlMGTgRbkwdKLri347TCLJdY0iwZLsR2xtIdtkUlGtgOerpmY9M=
+Program.Sub.Comments.End

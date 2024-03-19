@@ -1,0 +1,276 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.Form..Create(BaseForm)
+Gui.Form..Caption("AP Reverse Process")
+Gui.Form..Size(11024,11024)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..AlwaysOnTop(False)
+Gui.Form..FontName("Tahoma")
+Gui.Form..FontSize(8.25)
+Gui.Form..ControlBox(True)
+Gui.Form..MaxButton(True)
+Gui.Form..MinButton(True)
+Gui.Form..MousePointer(0)
+Gui.Form..Moveable(True)
+Gui.Form..Sizeable(True)
+Gui.Form..ShowInTaskBar(True)
+Gui.Form..TitleBar(True)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form.gsgcProcessed.Create(GsGridControl)
+Gui.Form.gsgcProcessed.Enabled(True)
+Gui.Form.gsgcProcessed.Visible(True)
+Gui.Form.gsgcProcessed.Zorder(0)
+Gui.Form.gsgcProcessed.Size(11025,10575)
+Gui.Form.gsgcProcessed.Position(0,0)
+Gui.Form.gsgcProcessed.Dock(5)
+Gui.Form.gsgcProcessed.Event(RowCellClick,gsgcProcessed_RowCellClick)
+Gui.FormConformation..Create(BaseForm)
+Gui.FormConformation..Caption("Conformation Text Box")
+Gui.FormConformation..Size(4410,3375)
+Gui.FormConformation..MinX(0)
+Gui.FormConformation..MinY(0)
+Gui.FormConformation..Position(0,0)
+Gui.FormConformation..AlwaysOnTop(False)
+Gui.FormConformation..FontName("Tahoma")
+Gui.FormConformation..FontSize(8.25)
+Gui.FormConformation..ControlBox(True)
+Gui.FormConformation..MaxButton(True)
+Gui.FormConformation..MinButton(True)
+Gui.FormConformation..MousePointer(0)
+Gui.FormConformation..Moveable(True)
+Gui.FormConformation..Sizeable(True)
+Gui.FormConformation..ShowInTaskBar(True)
+Gui.FormConformation..TitleBar(True)
+Gui.FormConformation.lbl1.Create(Label,"Are you sure you want to reverse this invoice?",True,3360,195,0,525,1485,True,0,"Tahoma",8.25,,0,0)
+Gui.FormConformation.lbl1.BorderStyle(0)
+Gui.FormConformation.cmdYes.Create(Button)
+Gui.FormConformation.cmdYes.Enabled(True)
+Gui.FormConformation.cmdYes.Visible(True)
+Gui.FormConformation.cmdYes.Zorder(0)
+Gui.FormConformation.cmdYes.Size(1485,540)
+Gui.FormConformation.cmdYes.Position(585,1845)
+Gui.FormConformation.cmdYes.Caption("Yes")
+Gui.FormConformation.cmdYes.FontName("Tahoma")
+Gui.FormConformation.cmdYes.FontSize(8.25)
+Gui.FormConformation.cmdYes.BackColor(12648384)
+Gui.FormConformation.cmdYes.Event(Click,cmdYes_Click)
+Gui.FormConformation.cmdNo.Create(Button)
+Gui.FormConformation.cmdNo.Enabled(True)
+Gui.FormConformation.cmdNo.Visible(True)
+Gui.FormConformation.cmdNo.Zorder(0)
+Gui.FormConformation.cmdNo.Size(1485,540)
+Gui.FormConformation.cmdNo.Position(2325,1845)
+Gui.FormConformation.cmdNo.Caption("No")
+Gui.FormConformation.cmdNo.FontName("Tahoma")
+Gui.FormConformation.cmdNo.FontSize(8.25)
+Gui.FormConformation.cmdNo.BackColor(12632319)
+Gui.FormConformation.cmdNo.Event(Click,cmdNo_Click)
+Gui.FormConformation.lblInvNumber.Create(Label,"Invoice #:",True,750,195,0,825,960,True,0,"Tahoma",8.25,,0,0)
+Gui.FormConformation.lblInvNumber.BorderStyle(0)
+Gui.FormConformation.lblVendName.Create(Label,"Vendor Name:",True,1020,195,0,555,570,True,0,"Tahoma",8.25,,0,0)
+Gui.FormConformation.lblVendName.BorderStyle(0)
+Gui.FormConformation.lblPOHead.Create(Label,"PO Head:",True,690,195,0,885,765,True,0,"Tahoma",8.25,,0,0)
+Gui.FormConformation.lblPOHead.BorderStyle(0)
+Gui.FormConformation.lblTextBoxID.Create(Label,"DOCID:",True,555,195,0,1020,1155,True,0,"Tahoma",8.25,,0,0)
+Gui.FormConformation.lblTextBoxID.BorderStyle(0)
+Gui.FormConformation.lbl2.Create(Label,"Invoice Details",True,1545,285,0,1350,180,True,0,"Tahoma",12,,0,0)
+Gui.FormConformation.lbl2.BorderStyle(0)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.iDOCID.Declare
+v.Global.iRowIndex.Declare
+v.Global.sVendName.Declare
+v.Global.sInvcNumb.Declare
+v.Global.sPOhead.Declare
+
+Program.External.Include.Library("GCG_6861_Functions.lib")
+
+'options
+V.Global.sCallback.Declare(String, "Form_UnLoad")
+V.Global.sProject.Declare(String, "6861")
+V.Global.sProjectTitle.Declare(String, "AP AI Automation - Reverse Process")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.Try
+
+F.Intrinsic.Control.CallSub(SetLibraryLoggingVariables, "Project", V.Global.sProject, "ProjectTitle", V.Global.sProjectTitle, "CallBack", V.Global.sCallback, "Unattended", False)
+
+f.ODBC.Connection!con6861.opencompanyconnection(90)
+f.Intrinsic.Control.CallSub(createDataTable)
+f.Intrinsic.Control.CallSub(setProperties)
+
+gui.Form..Show
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.setProperties.Start
+f.Intrinsic.Control.Try
+
+	gui.Form.gsgcProcessed.AddGridviewFromDatatable("gvAPInvProcessed","dtAPInvProcessed")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "NOTES", "AllowEdit", False)
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "NOTES", "Caption", "Notes")
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "NOTES","HeaderFontBold",true)
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "NOTES", "ReadOnly", True)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "NOTES","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "NOTES", "Visible", False)
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "VENDCODE", "AllowEdit", False)
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "VENDCODE", "Caption", "Vendor #")
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "VENDCODE","HeaderFontBold",true)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "VENDCODE","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "VENDCODE", "Visible", False)
+	
+	
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "processeddate", "AllowEdit", False)
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "processeddate", "Caption", "Processed Date")
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "processeddate","HeaderFontBold",true)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "processeddate","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "processeddate", "Visible", True)
+	
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "VendName", "AllowEdit", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "VendName","Caption","Vendor")
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "VendName","HeaderFontBold",true)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "VendName","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "InvcNumb", "AllowEdit", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "InvcNumb","Caption","Invoice #")
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "InvcNumb","HeaderFontBold",true)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "InvcNumb","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "DocSavedLocation",   "Visible", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "DocSavedLocation","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "GSTTOTAL", "Visible", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "GSTTOTAL","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "SUBTOTAL", "Visible", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "SUBTOTAL","HeaderHAlignment","Center")
+	
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "DOCID", "Visible", True)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "DOCID","HeaderHAlignment","Center")
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "DOCID","HeaderFontBold",true)
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "DOCID", "AllowEdit", False)
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "PROCESSED", "Visible", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "PROCESSED","HeaderHAlignment","Center")
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "PROCESSED","HeaderFontBold",true)
+	
+	
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "GRSTOTAL", "Visible", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "GRSTOTAL","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "INVCDATE", "Visible", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "INVCDATE","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "GssStatus", "Visible", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "GssStatus","HeaderHAlignment","Center")
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "POHEAD", "AllowEdit", False)
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "POHEAD", "Caption", "PO Head")
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "POHEAD","HeaderFontBold",true)
+	gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "ID", "Visible", False)
+	Gui.Form.gsgcProcessed.SetColumnProperty("gvAPInvProcessed", "POHEAD","HeaderHAlignment","Center")
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.setProperties.End
+
+Program.Sub.createDataTable.Start
+f.Intrinsic.Control.Try
+	'f.Intrinsic.Debug.ShowCallerInfo
+	f.Intrinsic.Control.If(v.DataTable.dtAPInvProcessed.Exists)
+		'if datatable is already created, delete it
+		f.Data.Datatable.DeleteRow("dtAPInvProcessed")
+		f.Data.Datatable.CreateFromSQL("dtAPTempLines","con6861","SELECT DISTINCT VendName,DOCID,VENDCODE,GSTTOTAL, SUBTOTAL, GRSTOTAL, INVCDATE, INVCNUMB, DocSavedLocation, GssStatus,ID, POHEAD,NOTES,Processed,processeddate FROM GCG_6861_AP_HEAD WHERE GssStatus='processed' ORDER BY VendName, InvcNumb") 'processed
+		f.Data.Datatable.Merge("dtAPTempLines","dtAPInvProcessed",false,1)
+		f.Data.Datatable.Close("dtAPTempLines")
+	F.Intrinsic.Control.Else
+		f.Data.DataTable.CreateFromSQL("dtAPInvProcessed",con6861,"SELECT DISTINCT VendName,DOCID,VENDCODE,GSTTOTAL, SUBTOTAL, GRSTOTAL, INVCDATE, INVCNUMB, DocSavedLocation, GssStatus,ID, POHEAD,NOTES,Processed,processeddate FROM GCG_6861_AP_HEAD WHERE GssStatus='processed' ORDER BY VendName, InvcNumb",TRUE)
+		gui.Form.gsgcProcessed.DataSource("dtAPInvProcessed")
+	f.Intrinsic.Control.EndIf
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.createDataTable.End
+
+Program.Sub.gsgcProcessed_RowCellClick.Start
+f.Intrinsic.Control.Try
+
+	v.Local.iDOCID.Declare
+	v.Local.sVendName.Declare
+	v.Local.sInvcNumb.Declare
+	v.Local.sPOhead.Declare
+	
+	v.Local.sMsg.Declare
+	v.Global.iRowIndex.Set(v.Args.RowIndex)
+	v.Global.sVendName.Set(v.Args.RowIndex)
+	v.Global.sInvcNumb.Set(v.Args.RowIndex)
+	v.Global.sPOhead.Set(v.Args.RowIndex)
+	GUI.Form.gsgcProcessed.GetCellValueByColumnName(gvAPInvProcessed,"DOCID",v.Global.iRowIndex,v.Local.iDOCID)
+	GUI.Form.gsgcProcessed.GetCellValueByColumnName(gvAPInvProcessed,"VendName",v.Global.iRowIndex,v.Local.sVendName)
+	GUI.Form.gsgcProcessed.GetCellValueByColumnName(gvAPInvProcessed,"InvcNumb",v.Global.iRowIndex,v.Local.sInvcNumb)
+	GUI.Form.gsgcProcessed.GetCellValueByColumnName(gvAPInvProcessed,"POHEAD",v.Global.iRowIndex,v.Local.sPOhead)
+	v.Global.iDOCID.Set(v.Local.iDOCID)
+
+	f.Intrinsic.String.Concat("DOCID: ",v.Local.iDOCID,v.Local.sMsg)
+	gui.FormConformation.lblTextBoxID.Caption(v.Local.sMsg)
+	f.Intrinsic.String.Concat("Vendor Name: ",v.Local.sVendName,v.Local.sMsg)
+	gui.FormConformation.lblVendName.Caption(v.Local.sMsg)
+	f.Intrinsic.String.Concat("Invoice Number: ",v.Local.sInvcNumb,v.Local.sMsg)
+	gui.FormConformation.lblInvNumber.Caption(v.Local.sMsg)
+	f.Intrinsic.String.Concat("PO Head: ",v.Local.sPOhead,v.Local.sMsg)
+	gui.FormConformation.lblPOHead.Caption(v.Local.sMsg)
+
+	gui.FormConformation..Show
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.gsgcProcessed_RowCellClick.End
+
+Program.Sub.cmdNo_Click.Start
+f.Intrinsic.Control.Try
+
+	gui.FormConformation..Visible(False)
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdNo_Click.End
+
+Program.Sub.cmdYes_Click.Start
+f.Intrinsic.Control.Try
+		v.Local.ssql.Declare
+
+		f.Intrinsic.String.Build("UPDATE GCG_6861_AP_SA SET POSTED=0 WHERE DOCID={0}",v.global.iDOCID,v.Local.ssql)
+		f.ODBC.Connection!con6861.Execute(v.Local.ssql)
+		
+		f.Intrinsic.String.Build("UPDATE GCG_6861_AP_HEAD SET PROCESSED=0, GSSStatus='approved'  WHERE DocID='{0}'",v.global.iDOCID,v.Local.ssql)
+		f.ODBC.Connection!con6861.Execute(v.Local.ssql) 
+
+
+		f.Data.Datatable.DeleteRow("dtAPInvProcessed",v.Global.iRowIndex)
+		gui.FormConformation..Visible(False)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdYes_Click.End
+
+Program.Sub.Form_UnLoad.Start
+F.Intrinsic.Control.Try
+
+F.Intrinsic.Control.If(V.ODBC.con6861.Exists, =, 1)
+	F.ODBC.Connection!con6861.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMessage)
+F.Intrinsic.Control.EndTry
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.Comments.Start
+${$5$}$20.1.8693.27812$}$1
+${$6$}$rseddon$}$20240213152011011$}$DkKb6sybY9hE3N0enyRwKJuHSlMGTgRbkwdKLri347QADXCwGHmMXb0k6Gjsb+B9BrHSRybkBnE=
+Program.Sub.Comments.End

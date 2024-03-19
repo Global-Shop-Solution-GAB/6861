@@ -1,0 +1,120 @@
+﻿Program.Sub.Preflight.Start
+V.Global.s2110Error.Declare(String, "")
+V.Global.s2110Branch.Declare(String, "NA")
+V.Global.s2110File.Declare(String, "")
+
+V.Global.iLengths.Declare(String, "6*!*6*!*15*!*6*!*6*!*16*!*15*!*1*!*5*!*1*!*6*!*3*!*6*!*2*!*7*!*3*!*3*!*6*!*14*!*14*!*3*!*7*!*2*!*38*!*2*!*1*!*300")
+V.Global.sMap.Declare(String, "BATCH_DATE_FORMAT*!*VENDOR*!*INVOICE*!*INVOICE_DATE_FORMAT*!*INVOICE_DUE_DATE_FORMAT*!*BALANCE_DUE_FORMAT*!*GL_ACCOUNT*!*TAXABLE_FLAG_FORMAT*!*TAX_CODE*!*BOOK_SELF_ACCESS_TAX_FORMAT*!*JOB*!*SUFFIX*!*SEQUENCE*!*BRANCH*!*PURCHASE_ORDER*!*PURCHASE_ORDER_LINE*!*PURCHASE_ORDER_UM*!*RECEIVER*!*QUANTITY*!*PRICE*!*BUYER*!*VOUCHER*!*VAT_RULE*!*PART*!*LOCATION*!*COST_TYPE*!*NOTES")
+
+F.Data.DataTable.Create("dt2110", True)
+F.Data.DataTable.AddColumn("dt2110", "BATCH_DATE", "Date")
+F.Data.DataTable.AddColumn("dt2110", "VENDOR", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "INVOICE", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "INVOICE_DATE", "Date")
+F.Data.DataTable.AddColumn("dt2110", "INVOICE_DUE_DATE", "Date")
+F.Data.DataTable.AddColumn("dt2110", "BALANCE_DUE", "Float", 0)
+F.Data.DataTable.AddColumn("dt2110", "GL_ACCOUNT", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "TAXABLE_FLAG", "Boolean", False)
+F.Data.DataTable.AddColumn("dt2110", "TAX_CODE", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "BOOK_SELF_ACCESS_TAX", "Boolean", False)
+F.Data.DataTable.AddColumn("dt2110", "JOB", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "SUFFIX", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "SEQUENCE", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "BRANCH", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "PURCHASE_ORDER", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "PURCHASE_ORDER_LINE", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "PURCHASE_ORDER_UM", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "RECEIVER", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "QUANTITY", "Float")
+F.Data.DataTable.AddColumn("dt2110", "PRICE", "Float")
+F.Data.DataTable.AddColumn("dt2110", "BUYER", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "VOUCHER", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "VAT_RULE", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "PART", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "LOCATION", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "COST_TYPE", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "NOTES", "String", "")
+Program.Sub.Preflight.End
+
+Program.Sub.2110.Start
+V.Local.iCounter.Declare(Long)
+V.Local.sTemp.Declare(String)
+V.Local.sSplitTemp.Declare(String)
+V.Local.sContents.Declare(String)
+V.Local.sFile.Declare(String)
+V.Local.sParameters.Declare(String)
+V.Local.dDate.Declare(Date)
+
+F.Intrinsic.Control.Try
+
+V.Global.s2110Error.Set("")
+
+F.Intrinsic.Control.If(V.DataTable.dt2110.RowCount, <=, 0)
+	V.Global.s2110Error.Set("Error: No records in dt2110 DataTable.")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+'new fields for formatting
+F.Data.DataTable.AddExpressionColumn("dt2110", "TAXABLE_FLAG_FORMAT", "String", "IIF([TAXABLE_FLAG], 'Y', 'N')")
+F.Data.DataTable.AddExpressionColumn("dt2110", "BOOK_SELF_ACCESS_TAX_FORMAT", "String", "IIF([BOOK_SELF_ACCESS_TAX], 'Y', 'N')")
+F.Data.DataTable.AddColumn("dt2110", "BATCH_DATE_FORMAT", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "INVOICE_DATE_FORMAT", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "INVOICE_DUE_DATE_FORMAT", "String", "")
+F.Data.DataTable.AddColumn("dt2110", "BALANCE_DUE_FORMAT", "String", "")
+
+'format dates
+F.Data.DataTable.SetValueFormat("dt2110", -1, "BATCH_DATE", "BATCH_DATE_FORMAT", "MMDDYY")
+F.Data.DataTable.SetValueFormat("dt2110", -1, "INVOICE_DATE", "INVOICE_DATE_FORMAT", "MMDDYY")
+F.Data.DataTable.SetValueFormat("dt2110", -1, "INVOICE_DUE_DATE", "INVOICE_DUE_DATE_FORMAT", "MMDDYY")
+F.Data.DataTable.SetValueFormat("dt2110", -1, "BALANCE_DUE", "BALANCE_DUE_FORMAT", "0.00")
+
+'format notes
+F.Intrinsic.Control.For(V.Local.iCounter, 0, V.DataTable.dt2110.RowCount--, 1)
+	F.Intrinsic.Control.If(V.DataTable.dt2110(V.Local.iCounter).NOTES!FieldValTrim, !=, "")
+		F.Intrinsic.String.Left(V.DataTable.dt2110(V.Local.iCounter).NOTES!FieldValTrim, 300, V.Local.sTemp)
+		F.Intrinsic.String.LimitSplit(V.Local.sTemp, 30, V.Local.sSplitTemp)
+		F.Intrinsic.String.Join(V.Local.sSplitTemp, "*@*", V.Local.sTemp)
+		F.Intrinsic.String.Replace(V.Local.sTemp, V.Ambient.NewLine, "*@*", V.Local.sTemp)
+		F.Data.DataTable.SetValue("dt2110", V.Local.iCounter, "NOTES", V.Local.sTemp)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iCounter)
+V.Local.sSplitTemp.Redim(0, 0)
+
+'now create file from datatable
+F.Data.DataView.Create("dt2110", "dv2110", 22)
+F.Data.DataView.ToString("dt2110", "dv2110", V.Global.sMap, "*!*", V.Ambient.NewLine, V.Local.sContents)
+F.Data.DataView.Close("dt2110", "dv2110")
+
+'create the upload file
+F.Intrinsic.String.Build("{0}\APBATCH_INVACR{1}.txt", V.Caller.FilesDir, V.Global.s2110Branch, V.Local.sFile)
+F.Intrinsic.File.String2File(V.Local.sFile, V.Local.sContents)
+V.Global.s2110File.Set(V.Local.sFile)
+
+'grab batch date
+V.Local.dDate.Set(V.DataTable.dt2110(0).BATCH_DATE!FieldVal)
+
+'build parameters
+F.Intrinsic.String.Build("APBATCH_INVACR{0}.txt!*!{1}!*!{2}!*!{3}", V.Global.s2110Branch, V.Caller.User, "", V.Local.dDate.FormatYYYYMMDD, V.Local.sParameters)
+
+'Upload
+F.Global.General.CallWrapperSync(2110, V.Local.sParameters)
+
+'clean up main DT
+F.Data.DataTable.RemoveColumn("dt2110", "TAXABLE_FLAG_FORMAT")
+F.Data.DataTable.RemoveColumn("dt2110", "BOOK_SELF_ACCESS_TAX_FORMAT")
+F.Data.DataTable.RemoveColumn("dt2110", "BATCH_DATE_FORMAT")
+F.Data.DataTable.RemoveColumn("dt2110", "INVOICE_DATE_FORMAT")
+F.Data.DataTable.RemoveColumn("dt2110", "INVOICE_DUE_DATE_FORMAT")
+F.Data.DataTable.RemoveColumn("dt2110", "BALANCE_DUE_FORMAT")
+F.Data.DataTable.DeleteRow("dt2110")
+F.Data.DataTable.AcceptChanges("dt2110")
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("{0}*!*{1}*!*{2}", V.Ambient.CurrentSubroutine, V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Global.s2110Error)
+F.Intrinsic.Control.EndTry
+Program.Sub.2110.End
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$rseddon$}$20231204163149365$}$DkKb6sybY9hE3N0enyRwKJuHSlMGTgRb6bPjzlpUVhtXxCiSzNgjklIRroS8pm+srJYCj52YD0Y=
+Program.Sub.Comments.End
